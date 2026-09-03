@@ -1,0 +1,24 @@
+{
+  "name": "@giam-siap/watcher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "vendor-stub": "tsx dev/vendor-stub.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@giam-siap/sui-mcp": "file:../sui-mcp",
+    "@mysten/sui": "^2.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
