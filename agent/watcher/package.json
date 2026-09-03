@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@giam-siap/sui-mcp": "file:../sui-mcp",
-    "@mysten/sui": "^2.29.0"
+    "@mysten/sui": "^2.29.0",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

@@ -1,4 +1,13 @@
+import { config as loadDotenv } from "dotenv";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { loadConfig, type Config } from "@giam-siap/sui-mcp/dist/config.js";
+
+// Load this package's own .env (agent/watcher/.env) before reading any watcher-specific vars —
+// the watcher is deployed as its own process (§4.6), independent of agent/sui-mcp's. Resolved
+// relative to this file, not process.cwd(). sui-mcp's loadConfig() below does the same for its
+// own .env, but dotenv never overrides a var already set here, so there's no conflict.
+loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -23,7 +32,10 @@ export function loadWatcherConfig(): WatcherConfig {
   return {
     ...base,
     pollIntervalMs: Number(process.env.WATCHER_POLL_INTERVAL_MS ?? 20_000),
-    vendorPubkeyHex: requireEnv("VENDOR_PUBKEY_HEX"),
+    // Falls back to sui-mcp's dev-only vendor pubkey (already loaded above via its own .env) so
+    // local dev works with only agent/sui-mcp/.env populated. Set VENDOR_PUBKEY_HEX explicitly
+    // once teammates' real vendor key is registered into VendorRegistry (§7 step 2b).
+    vendorPubkeyHex: process.env.VENDOR_PUBKEY_HEX ?? requireEnv("DEV_VENDOR_PUBKEY_HEX"),
     alertThreshold: Number(process.env.WATCHER_ALERT_THRESHOLD ?? 3),
   };
 }

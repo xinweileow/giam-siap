@@ -1,3 +1,14 @@
+import { config as loadDotenv } from "dotenv";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+// Load this package's own .env before anything reads process.env, so the server is
+// self-sufficient however it's launched (`hermes mcp add`, a bare `node dist/server.js`, or a
+// deployed process per §4.6) without relying on the launcher to inject env vars itself. Resolved
+// relative to this file, not process.cwd(), so it works regardless of the caller's working
+// directory. Never overrides a var already set in the environment (dotenv's default).
+loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
+
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {

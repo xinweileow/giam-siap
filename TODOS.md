@@ -52,8 +52,33 @@
 **Priority:** P1 — depends on §7 step 3 landing first.
 **Depends on:** Hermes/Telegram gateway wiring (§7 step 3).
 
+### Give Hermes persistent project context for order creation (`agent/hermes.config/`, §4.1)
+
+**What:** Hermes correctly parses NL intent into `createOrder` arguments when the owner's address, `VendorRegistry.rate_mist_per_cent`, and each item's vendor URL are supplied as context in the prompt (verified 5/5 times, see IMPLEMENTATION_PLAN.md's "Current status") — but nothing today supplies that context automatically inside a real Telegram conversation. Build `agent/hermes.config/` (named in §4.1's structure but not yet created) with whatever Hermes actually auto-loads per conversation (its own docs/`--ignore-rules` help text mentions `AGENTS.md`/`SOUL.md` auto-injection) containing: the current rate, the item→vendor-URL table, and instructions never to call `executeOrder` (that's the watcher's job only).
+
+**Why:** Without this, a real Telegram message can't actually produce a correct `createOrder` call — the test that passed this session only worked because I fed Hermes the missing facts by hand in the prompt.
+
+**Context:** Surfaced 2026-09-03 while validating §8.3's NL-parsing checklist item via `hermes -z` oneshot mode. Also unconfirmed: whether the live Telegram gateway's conversations actually run with this repo as their working directory (which is what would make a repo-local `AGENTS.md` auto-inject) — needs checking against how this Hermes install's gateway was set up (`hermes project`/`hermes gateway setup`), since that determines where this config file actually needs to live.
+
+**Effort:** S
+**Priority:** P0 — blocks §7 step 3's "a live Telegram message should be able to lock real testnet SUI into a real order" from being true.
+**Depends on:** Nothing — unblocked now.
+
+### Bridge `createOrder`'s unsigned tx to a signer before real zkLogin exists (§7 steps 3-5's stand-in signer)
+
+**What:** `createOrder` returns unsigned tx bytes by design (§4.5 — only the owner should sign). `e2e-smoke.ts` signs those bytes inline with the stand-in keypair as a one-off manual script, but nothing in the Hermes-triggered path (Telegram → Hermes → `createOrder` tool) can sign and submit that transaction today. Until either this or real zkLogin (§7 step 6) exists, a live Telegram order request can get an unsigned tx built and nothing further — it cannot lock funds.
+
+**Why:** §7's own sequencing intentionally defers real zkLogin past steps 2-5 specifically so "the core loop is provable before the hardest integration is even started" (§7's sequencing-correction note) — but that provability requires *some* signer in the loop, and right now there isn't one outside a manual script.
+
+**Context:** Surfaced 2026-09-03 alongside the item above, while checking what "a live Telegram message should be able to lock real testnet SUI into a real order" (§7 step 3) actually requires end-to-end. Needs a decision, not just code: e.g. a dev-only `/sign`-shaped stub that auto-signs with the stand-in keypair (mimicking the shape of §4.5's real flow so swapping it out later is mechanical), versus a temporary direct signing step inside the watcher or a small bridge script. Whatever's chosen should be clearly dev-only and easy to delete when §7 step 6 lands, per §7's own priority line about not letting stand-ins linger past their purpose.
+
+**Effort:** S-M depending on approach
+**Priority:** P0 — same blocker as the item above.
+**Depends on:** Nothing — unblocked now, but worth deciding the approach deliberately rather than improvising it.
+
 ## Completed
 
+- **sui-tools MCP server connected to Hermes, and NL intent parsing validated live** (§7 step 3, first half) — 2026-09-03. `hermes mcp add sui-tools --command node --args <abs path>\agent\sui-mcp\dist\server.js` registered and connects cleanly (`hermes mcp test sui-tools`: 6/6 tools discovered). Confirmed Telegram/Discord/WhatsApp gateway credentials and the gateway service already existed on this machine from prior setup, so that sub-step of §7 step 3 needed no work. Validated §8.3's first checklist item for real: ran the plan's exact demo phrasing through `hermes -z` (oneshot) 5 times in a row, every run producing the identical correct `createOrder` call (`itemId=coffee, targetPriceCents=1000, quantity=50, paymentAmountMist=50000000`) and a successfully-built unsigned tx. Along the way, added self-loading `.env` support (via `dotenv`, resolved relative to each package's own source location) to both `agent/sui-mcp/src/config.ts` and `agent/watcher/src/config.ts` — without it, `hermes mcp add`'s spawned `node dist/server.js` subprocess had no env vars at all. Two real gaps found by this test and **not yet closed** — see the two new P0 items above: Hermes has no persistent, automatic source for the owner address/rate/vendor-URL context this test fed it by hand, and nothing in the Hermes-triggered path can actually sign the unsigned tx `createOrder` returns.
 - **Deterministic watcher process built** (§4.1, §4.3, §7 step 4) — 2026-09-03. `agent/watcher/src/index.ts` runs a plain `setInterval` loop (`getActiveOrders()` → `getOrder()` → `checkVendorPrice()` → `executeOrder()`, no LLM) against the same sui-mcp tool functions Hermes uses, imported as a real local package dependency (`agent/sui-mcp` now emits type declarations; `agent/watcher` depends on `"@giam-siap/sui-mcp": "file:../sui-mcp"`). Core tick logic (`agent/watcher/src/loop.ts`) is dependency-injected and covered by 12/12 passing Vitest tests exercising the full §9.1 failure matrix (vendor failures never treated as price=0, alert-after-N-consecutive-failures, retry-with-backoff on transient `executeOrder` failures, race-vs-bug detection on an on-chain revert, one bad order never blocking the rest of a tick). Also added `agent/watcher/dev/vendor-stub.ts`, a local signed-quote HTTP server matching §4.2's vendor interface spec exactly, for testing the loop before teammates' real mock-vendor site exists. Not yet done: wiring `checkNow()`/`onAlert` to actual Telegram (see the new P1 item above) — that's blocked on §7 step 3, not on this work.
 - **sui-mcp tool test suite fully green (13/13)** — 2026-09-03. Fixed both the fake-address fixtures and a deeper bug: tests asserted a `.target` field on `MoveCall` commands that the SDK doesn't produce (it splits into `.package`/`.module`/`.function`), and `createOrder`'s test expected 6 arguments against the real 7-argument contract signature (missing the `Clock` param). See IMPLEMENTATION_PLAN.md's "Current status" section.
 - **Contract deployed to Sui testnet**, `VendorRegistry` configured (rate + dev vendor pubkey), wallet funded — 2026-09-03.
