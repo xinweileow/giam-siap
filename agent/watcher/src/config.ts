@@ -7,7 +7,10 @@ import { loadConfig, type Config } from "@giam-siap/sui-mcp/dist/config.js";
 // the watcher is deployed as its own process (§4.6), independent of agent/sui-mcp's. Resolved
 // relative to this file, not process.cwd(). sui-mcp's loadConfig() below does the same for its
 // own .env, but dotenv never overrides a var already set here, so there's no conflict.
-loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
+// `quiet: true` keeps dotenv's banner out of this process's own console output (see sui-mcp's
+// config.ts for why it's load-bearing there — stdout corruption of an MCP stdio stream — here
+// it's just to keep the watcher's own logs clean).
+loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env"), quiet: true });
 
 function requireEnv(name: string): string {
   const value = process.env[name];

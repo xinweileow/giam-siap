@@ -7,7 +7,10 @@ import path from "node:path";
 // deployed process per §4.6) without relying on the launcher to inject env vars itself. Resolved
 // relative to this file, not process.cwd(), so it works regardless of the caller's working
 // directory. Never overrides a var already set in the environment (dotenv's default).
-loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env") });
+// `quiet: true` is load-bearing, not cosmetic: this server speaks MCP over stdio, and dotenv's
+// default "injected env (N) from ..." banner goes to stdout, which corrupts the JSON-RPC stream
+// the second an MCP host (e.g. Hermes) spawns this as a child process.
+loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", ".env"), quiet: true });
 
 function requireEnv(name: string): string {
   const value = process.env[name];
