@@ -70,7 +70,11 @@ export function createWatcher(deps: WatcherDeps) {
     const count = (vendorFailureStreaks.get(key) ?? 0) + 1;
     vendorFailureStreaks.set(key, count);
     log(`${key}: vendor check failed (streak ${count}): ${message}`);
-    if (count >= alertThreshold) {
+    // Exactly `===`, not `>=`: fire once when a failure episode first crosses the threshold, not
+    // again on every subsequent tick for as long as it stays broken — a real bug found live (one
+    // stale test order alerted the owner's Telegram 400+ times in a row). A success later deletes
+    // this key (below), so a fresh failure episode still gets its own single alert.
+    if (count === alertThreshold) {
       onAlert(`Vendor check has failed ${count} times in a row for ${key}: ${message}`);
     }
   }

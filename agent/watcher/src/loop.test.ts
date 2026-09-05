@@ -94,6 +94,26 @@ describe("createWatcher.tick", () => {
     expect(onAlert).toHaveBeenCalledTimes(1);
   });
 
+  it("does not re-alert on every subsequent tick once already past alertThreshold", async () => {
+    // Regression test for a real bug: onAlert fired on every tick once the streak reached
+    // alertThreshold, not just the tick it first crossed — one stale test order alerted the
+    // owner's Telegram 400+ times in a row for the exact same failure.
+    const onAlert = vi.fn();
+    const deps = baseDeps({
+      checkVendorPrice: vi.fn(async () => { throw new Error("timeout"); }),
+      onAlert,
+      alertThreshold: 3,
+    });
+    const watcher = createWatcher(deps);
+    await watcher.tick();
+    await watcher.tick();
+    await watcher.tick(); // crosses the threshold — exactly one alert
+    await watcher.tick();
+    await watcher.tick();
+    await watcher.tick(); // still failing, well past the threshold — must not alert again
+    expect(onAlert).toHaveBeenCalledTimes(1);
+  });
+
   it("clears a vendor's failure streak after a subsequent success", async () => {
     const onAlert = vi.fn();
     let shouldFail = true;
