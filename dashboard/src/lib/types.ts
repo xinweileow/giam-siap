@@ -9,14 +9,15 @@ export type TxLogKind = "created" | "fulfilled" | "cancelled";
 export interface OrderRow {
   id: string;
   owner: string;
-  /** USD cents — same unit the contract and the vendor's signed quote use (§3/§4.2). */
+  /** RM sen (field name kept "cents" from the original spec) — same unit the contract and the
+   * vendor's signed quote use (§3/§4.2). */
   targetPriceCents: number;
   quantity: number;
   status: number;
   /** Current on-chain escrow balance, in MIST, as a string (avoids float precision loss over
    * JSON). Only meaningful while `status === STATUS_LOCKED`; drained to 0 on settlement/cancel. */
   escrowMist: string;
-  /** The vendor-quoted settlement price (USD cents) from `OrderFulfilled`, once known. There is
+  /** The vendor-quoted settlement price (RM sen) from `OrderFulfilled`, once known. There is
    * no "current vendor price" for a still-Locked order available on-chain — the contract never
    * stores one (§3's `ProcurementOrder` has no such field), and the dashboard is scoped to
    * on-chain reads only, not vendor polling (§5.1/§5.3). */

@@ -1,5 +1,7 @@
 import { loadWatcherConfig } from "./config.js";
-import { createWatcher } from "./loop.js";
+import { createWatcher, type OrderCheckResult } from "./loop.js";
+import { startCheckNowServer } from "./httpServer.js";
+import { sendTelegramMessage } from "./telegram.js";
 import { makeSuiClient, makeAgentKeypair } from "@giam-siap/sui-mcp/dist/suiClient.js";
 import { getActiveOrders } from "@giam-siap/sui-mcp/dist/tools/getActiveOrders.js";
 import { getOrder } from "@giam-siap/sui-mcp/dist/tools/getOrder.js";
@@ -18,6 +20,15 @@ const config = loadWatcherConfig();
 const client = makeSuiClient(config);
 const agentKeypair = makeAgentKeypair(config);
 
+/** Fire-and-forget Telegram notification — a delivery failure here must never affect what the
+ * watcher already decided on-chain (§4.1's determinism note applies to notifications too: they're
+ * a side effect of a tick's result, not part of the decision itself). */
+function notifyTelegram(message: string): void {
+  sendTelegramMessage(config.telegram, message).catch((err) => {
+    console.error(`[watcher] failed to send Telegram notification: ${err instanceof Error ? err.message : err}`);
+  });
+}
+
 const watcher = createWatcher({
   getActiveOrders: () => getActiveOrders(client, config.packageId),
   getOrder: (orderId) => getOrder(client, orderId),
@@ -26,9 +37,8 @@ const watcher = createWatcher({
   vendorPubkeyHex: config.vendorPubkeyHex,
   alertThreshold: config.alertThreshold,
   onAlert: (message) => {
-    // TODO(§7 step 3): wire this to a real "alert yourself, not the owner" Telegram message once
-    // Hermes/Telegram wiring exists. Until then, this is the loudest signal available.
     console.error(`[watcher] ALERT: ${message}`);
+    notifyTelegram(`⚠️ Giam Siap watcher alert (not the owner — this is a self-alert per §9.1): ${message}`);
   },
   log: (message) => console.log(`[watcher] ${message}`),
 });
@@ -36,26 +46,36 @@ const watcher = createWatcher({
 let tickInFlight = false;
 
 /**
- * Runs one tick immediately, outside the timer — this is what the Telegram "check now" trigger
- * (§4.3 point 2) should call once that wiring exists, so a live demo doesn't have to wait on the
- * poll interval. Exported so it can be imported directly by that future caller.
+ * Runs one tick immediately, outside the timer. Exported (and exposed over HTTP via
+ * httpServer.ts) so the Telegram "check now" trigger (§4.3 point 2) can run it on demand instead
+ * of waiting for the poll interval. Returns the per-order results, or `null` if a tick was already
+ * in flight (so a caller — e.g. the HTTP handler — can report that back instead of silently no-op'ing).
  */
-export async function checkNow(): Promise<void> {
+export async function checkNow(): Promise<OrderCheckResult[] | null> {
   if (tickInFlight) {
     console.log("[watcher] tick already in progress, skipping overlapping trigger");
-    return;
+    return null;
   }
   tickInFlight = true;
   try {
     const results = await watcher.tick();
     for (const result of results) {
       console.log(`[watcher] order ${result.orderId}: ${result.outcome}${result.detail ? ` (${result.detail})` : ""}`);
+      if (result.outcome === "executed") {
+        notifyTelegram(
+          `🎉 Order ${result.orderId} executed! Tx: https://suiscan.xyz/testnet/tx/${result.detail}`,
+        );
+      }
     }
+    return results;
   } catch (err) {
     // A tick should never throw (loop.ts already isolates per-order failures), but if
     // getActiveOrders itself fails (e.g. RPC down), don't let it kill the process — the next
-    // timer tick gets another chance.
+    // timer tick gets another chance. Never rethrow: this runs unhandled off both the timer and
+    // an HTTP request handler, and either caller treating a failed tick as an unhandled
+    // rejection would be worse than just reporting "no results" for this trigger.
     console.error("[watcher] tick failed unexpectedly:", err);
+    return null;
   } finally {
     tickInFlight = false;
   }
@@ -64,9 +84,11 @@ export async function checkNow(): Promise<void> {
 console.log(`[watcher] starting — polling every ${config.pollIntervalMs}ms against package ${config.packageId}`);
 void checkNow();
 const timer = setInterval(() => void checkNow(), config.pollIntervalMs);
+const httpServer = startCheckNowServer(config.httpPort, checkNow, (message) => console.log(`[watcher] ${message}`));
 
 function shutdown(): void {
   clearInterval(timer);
+  httpServer.close();
   process.exit(0);
 }
 process.on("SIGINT", shutdown);

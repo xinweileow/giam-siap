@@ -1,0 +1,44 @@
+{
+  "_comment": "Canonical, repo-tracked source of the facts Hermes needs to parse a real Telegram procurement request correctly (IMPLEMENTATION_PLAN.md §4.1/§4.4, TODOS.md 'Give Hermes persistent project context'). This file is the source of truth; `node sync-to-hermes-profile.mjs` renders it (plus system-prompt.md) into the live, machine-local Hermes profile config that the Telegram gateway actually reads (see README.md for why that's a separate, out-of-repo file).",
+
+  "network": "testnet",
+  "packageId": "0x9d4610475a54bd178cd0da67ad73d52af794b7309f097da16fbf22441b61572f",
+  "vendorRegistryId": "0xf068649dd7a8e56a9001baa8dec22ec47aee4d9249051e6bc380b283dd037e52",
+  "rateMistPerCent": 1000,
+
+  "_devStandInSignerComment": "Dev-only stand-in for real zkLogin (§4.5/§7 step 6, TODOS.md 'Bridge createOrder's unsigned tx to a signer'). Same address as AGENT_PRIVATE_KEY in agent/sui-mcp/.env -- one funded testnet account plays owner + agent during development, per §3 build checklist step 5. Replace every reference to this address with the real per-order zkLogin address once §7 step 6 lands.",
+  "devStandInOwnerAddress": "0xf93fec94e303510a6f301554359d36c31f387537823367146a9815cd971efc05",
+
+  "telegram": {
+    "homeChatId": "5395834885",
+    "hermesProfile": "giam-siap"
+  },
+
+  "_dashboardComment": "Where /auth, /sign, and their APIs (owner-session lookup, pending-tx registration) live -- §4.5 steps 2-3, §7 step 6. localhost only until it's actually deployed.",
+  "dashboardUrl": "http://localhost:3000",
+
+  "watcher": {
+    "_comment": "Local-only control endpoint the watcher process exposes (agent/watcher/src/httpServer.ts) so Hermes can trigger an immediate settlement check instead of waiting for the next poll tick (§4.3 point 2). Loopback-only, no auth -- it never does anything a scheduled tick wouldn't already do on its own.",
+    "checkNowUrl": "http://127.0.0.1:4300/check-now"
+  },
+
+  "_itemsComment": "item -> vendor URL table. `priceCheckUrl` is what agent/watcher actually polls via checkVendorPrice (must be a signed JSON endpoint per IMPLEMENTATION_PLAN.md §4.2's spec -- GET url -> {item, price_cents, unit, ts, supplier_address, sig}). `displayUrl` is a real, human-facing vendor page Hermes can share with the owner in conversation; it does not need to satisfy the signed-JSON spec. When `priceCheckUrl` isn't a real signed endpoint yet, the watcher will safely alert (never falsely settle) on any order created against that item -- see IMPLEMENTATION_PLAN.md §9.1.",
+  "items": {
+    "coffee": {
+      "priceCheckUrl": "http://localhost:4100/api/price?item=coffee",
+      "priceCheckUrlNote": "agent/watcher/dev/vendor-stub.ts -- a local signed-quote stand-in, run alongside the watcher for demo/dev (see its own file header for how to start it).",
+      "displayUrl": "https://cooking-bistro.vercel.app/",
+      "displayUrlNote": "Real mock-vendor site teammates built (§0.7/§7 step 2b). It's a display/catalog page today with no /api/price endpoint yet -- once teammates add the signed endpoint from the spec, swap priceCheckUrl to point at it and register their real pubkey via AdminCap (update_vendor_pubkey)."
+    },
+    "sugar": {
+      "priceCheckUrl": "https://www.alibaba.com/showroom/wholesale-sugar.html",
+      "priceCheckUrlNote": "Context-only real vendor page -- no signed price API exists for this item yet, so checkVendorPrice will fail loudly (never a false settlement) if an order is ever created against it. Swap for a real signed endpoint before relying on this item in a live demo.",
+      "displayUrl": "https://www.alibaba.com/showroom/wholesale-sugar.html"
+    },
+    "rice": {
+      "priceCheckUrl": "https://www.alibaba.com/showroom/wholesale-rice.html",
+      "priceCheckUrlNote": "Same caveat as sugar above -- context-only, not a signed endpoint.",
+      "displayUrl": "https://www.alibaba.com/showroom/wholesale-rice.html"
+    }
+  }
+}

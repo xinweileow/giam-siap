@@ -1,4 +1,4 @@
-import { Transaction } from "@mysten/sui/transactions";
+import { Transaction, coinWithBalance } from "@mysten/sui/transactions";
 
 export interface CreateOrderInput {
   ownerAddress: string;
@@ -23,7 +23,14 @@ export interface CreateOrderConfig {
 export function buildCreateOrderTx(config: CreateOrderConfig, input: CreateOrderInput): Transaction {
   const tx = new Transaction();
   tx.setSender(input.ownerAddress);
-  const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(input.paymentAmountMist)]);
+  // Source the escrow payment coin from the owner's own balance, independent of `tx.gas` — NOT
+  // `tx.splitCoins(tx.gas, ...)`. That used to be harmless (the owner paid their own gas from the
+  // same coin anyway), but now that `/sign` submits via Enoki's gas-station sponsorship
+  // (dashboard/src/app/sign/page.tsx), `tx.gas` resolves to the SPONSOR's gas coin, not the
+  // owner's — splitting the escrow amount off it would have Enoki's wallet fund the entire order,
+  // not just network gas. `useGasCoin: false` sources this coin from the owner's own address
+  // balance instead, however that ends up funded (faucet, real transfer, whatever).
+  const payment = tx.add(coinWithBalance({ balance: input.paymentAmountMist, useGasCoin: false }));
   tx.moveCall({
     target: `${config.packageId}::procurement::create_order`,
     arguments: [

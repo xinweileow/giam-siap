@@ -29,6 +29,10 @@ export function loadConfig() {
     vendorRegistryId: requireEnv("SUI_VENDOR_REGISTRY_ID"),
     clockId: process.env.SUI_CLOCK_ID ?? "0x6",
     agentPrivateKey: requireEnv("AGENT_PRIVATE_KEY"),
+    // Where the dashboard's /api/pending-tx + /sign live (§4.5 step 3, §7 step 6's remaining
+    // wiring). requestOwnerSignature posts unsigned tx bytes here instead of the dev-signer
+    // bridge signing them itself.
+    dashboardUrl: process.env.DASHBOARD_URL ?? "http://localhost:3000",
   };
 }
 

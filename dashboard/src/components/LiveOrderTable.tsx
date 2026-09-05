@@ -1,10 +1,10 @@
-import { formatCentsAsUsd, shortAddress } from "@/lib/format";
+import { formatCentsAsMyr, shortAddress } from "@/lib/format";
 import { STATUS_FULFILLED, type OrderRow } from "@/lib/types";
 import StatusBadge from "./StatusBadge";
 
 function currentPriceCell(order: OrderRow): string {
   if (order.status === STATUS_FULFILLED && order.settledPriceCents !== null) {
-    return formatCentsAsUsd(order.settledPriceCents);
+    return formatCentsAsMyr(order.settledPriceCents);
   }
   if (order.status === STATUS_FULFILLED) {
     // Settled on-chain, but the OrderFulfilled event carrying the price hasn't shown up in our
@@ -39,7 +39,7 @@ export default function LiveOrderTable({ orders }: { orders: OrderRow[] }) {
                 <tr key={order.id}>
                   <td className="mono">{shortAddress(order.id)}</td>
                   <td className="mono">{shortAddress(order.owner)}</td>
-                  <td>{formatCentsAsUsd(order.targetPriceCents)}</td>
+                  <td>{formatCentsAsMyr(order.targetPriceCents)}</td>
                   <td>{currentPriceCell(order)}</td>
                   <td>
                     <StatusBadge status={order.status} />

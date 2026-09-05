@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# zkLogin scaffold's local persisted state (owner-session/pending-tx JSON files, §4.5) — same
+# category as a mounted volume in deployment, never committed.
+/.data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

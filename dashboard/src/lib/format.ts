@@ -13,8 +13,12 @@ export function formatMistAsSui(mist: string, fractionDigits = 4): string {
   return `${whole.toLocaleString("en-US")}.${fractionStr}`;
 }
 
-export function formatCentsAsUsd(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+/** Prices in this project are Ringgit Malaysia (RM/MYR), not USD — matching the real mock
+ * vendor site (cooking-bistro.vercel.app), which already quotes in RM. `cents` here means sen
+ * (1 RM = 100 sen); the on-chain field/param names keep the generic "cents" spelling from the
+ * original spec (see IMPLEMENTATION_PLAN.md's currency-convention note). */
+export function formatCentsAsMyr(cents: number): string {
+  return `RM${(cents / 100).toFixed(2)}`;
 }
 
 export function shortAddress(address: string, lead = 6, trail = 4): string {

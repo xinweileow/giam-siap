@@ -13,7 +13,7 @@ const OWNER: address = @0xA;
 const SUPPLIER: address = @0xB;
 
 const RATE_MIST_PER_CENT: u64 = 100_000; // fixed demo-day rate used across all tests
-const TARGET_PRICE_CENTS: u64 = 1000; // $10.00/kg
+const TARGET_PRICE_CENTS: u64 = 1000; // RM10.00/kg
 const QUANTITY: u64 = 50; // kg
 
 fun escrow_required(): u64 { QUANTITY * TARGET_PRICE_CENTS * RATE_MIST_PER_CENT }

@@ -24,7 +24,7 @@ const PORT = Number(process.env.VENDOR_STUB_PORT ?? 4100);
 const vendorKeypair = Ed25519Keypair.fromSecretKey(requireEnv("DEV_VENDOR_PRIVATE_KEY"));
 const supplierAddress = requireEnv("STUB_SUPPLIER_ADDRESS");
 
-// Starts above a typical demo target (e.g. $10.00/kg) so nothing settles until you either pass
+// Starts above a typical demo target (e.g. RM10.00/kg) so nothing settles until you either pass
 // ?price_cents=<n> on a request or POST /api/set-price — the same "flash sale" trigger the
 // research doc's supplier story describes (§0.6), under your control for the demo (§9.2).
 let currentPriceCents = Number(process.env.STUB_PRICE_CENTS ?? 1200);

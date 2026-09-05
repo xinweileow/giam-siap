@@ -23,7 +23,7 @@ const supplierKeypair = new Ed25519Keypair();
 const supplierAddress = supplierKeypair.getPublicKey().toSuiAddress();
 
 const ITEM_ID = "coffee";
-const TARGET_PRICE_CENTS = 1000; // $10.00/kg
+const TARGET_PRICE_CENTS = 1000; // RM10.00/kg
 const QUANTITY = 5; // kg
 const RATE_MIST_PER_CENT = 1000; // matches VendorRegistry.rate_mist_per_cent set on-chain
 const PAYMENT_MIST = QUANTITY * TARGET_PRICE_CENTS * RATE_MIST_PER_CENT; // exact escrow-sufficiency boundary
@@ -67,7 +67,7 @@ async function main() {
   console.log(`   active orders: ${JSON.stringify(active)}`);
   if (!active.includes(orderId)) throw new Error("New order missing from getActiveOrders()");
 
-  console.log("\n4) Building a signed vendor quote at $9.50/kg (below target)...");
+  console.log("\n4) Building a signed vendor quote at RM9.50/kg (below target)...");
   const priceCents = 950;
   // Back off a few seconds: the on-chain Clock object can trail wall-clock time slightly,
   // and execute_order asserts ts <= on-chain now (E_STALE_TIMESTAMP otherwise).

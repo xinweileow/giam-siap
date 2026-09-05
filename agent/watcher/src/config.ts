@@ -28,6 +28,20 @@ export interface WatcherConfig extends Config {
   vendorPubkeyHex: string;
   /** Consecutive vendor-check failures (per order+URL) before raising an alert (§9.1). */
   alertThreshold: number;
+  /** Port for the local "check now" control endpoint (§4.3 point 2, agent/hermes.config's
+   * watcher.checkNowUrl). Loopback-only — see httpServer.ts. */
+  httpPort: number;
+  telegram: {
+    /** Set to false to fall back to console-only logging (e.g. CI, or no Hermes profile set up
+     * on this machine yet) without touching the rest of the watcher's behavior. */
+    enabled: boolean;
+    /** Path to the hermes executable, or a bare name resolved via PATH. */
+    hermesBin: string;
+    /** Hermes profile holding this project's bot token + home chat id — see agent/hermes.config/. */
+    hermesProfile: string;
+    /** `hermes send --to` target. */
+    target: string;
+  };
 }
 
 export function loadWatcherConfig(): WatcherConfig {
@@ -40,5 +54,12 @@ export function loadWatcherConfig(): WatcherConfig {
     // once teammates' real vendor key is registered into VendorRegistry (§7 step 2b).
     vendorPubkeyHex: process.env.VENDOR_PUBKEY_HEX ?? requireEnv("DEV_VENDOR_PUBKEY_HEX"),
     alertThreshold: Number(process.env.WATCHER_ALERT_THRESHOLD ?? 3),
+    httpPort: Number(process.env.WATCHER_HTTP_PORT ?? 4300),
+    telegram: {
+      enabled: (process.env.TELEGRAM_NOTIFY_ENABLED ?? "true") !== "false",
+      hermesBin: process.env.HERMES_SEND_BIN ?? "hermes",
+      hermesProfile: process.env.HERMES_SEND_PROFILE ?? "giam-siap",
+      target: process.env.TELEGRAM_NOTIFY_TARGET ?? "telegram",
+    },
   };
 }

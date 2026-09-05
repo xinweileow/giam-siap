@@ -35,7 +35,7 @@ public struct ProcurementOrder has key, store {
     owner: address,
     item_id: String,
     vendor_urls: vector<String>,
-    /// Price per unit, in USD cents — the same unit the vendor's signature covers (§4.2).
+    /// Price per unit, in MYR sen (RM cents) — the same unit the vendor's signature covers (§4.2).
     target_price: u64,
     quantity: u64,
     escrow: Balance<SUI>,
@@ -56,8 +56,10 @@ public struct VendorRegistry has key {
     /// The mock vendor's ed25519 public key. Empty until an admin registers it via
     /// `update_vendor_pubkey` — `execute_order` cannot succeed against an empty key.
     trusted_pubkey: vector<u8>,
-    /// Fixed demo-day USD-cents -> MIST rate. Lives on-chain so create_order's invariant and
-    /// execute_order's payout always read the SAME rate (§3).
+    /// Fixed demo-day MYR-sen -> MIST rate (field name kept as `rate_mist_per_cent` — "cent"
+    /// here means "smallest currency unit", not literally USD; see IMPLEMENTATION_PLAN.md's
+    /// currency-convention note). Lives on-chain so create_order's invariant and execute_order's
+    /// payout always read the SAME rate (§3).
     rate_mist_per_cent: u64,
 }
 

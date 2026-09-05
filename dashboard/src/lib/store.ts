@@ -116,7 +116,7 @@ function applyEvent(state: StoreState, event: EventLike): void {
       kind: "created",
       orderId,
       digest: event.transactionDigest,
-      summary: `Order ${shortId(orderId)} created, target $${(targetPriceCents / 100).toFixed(2)} x ${fields.quantity}`,
+      summary: `Order ${shortId(orderId)} created, target RM${(targetPriceCents / 100).toFixed(2)} x ${fields.quantity}`,
     });
   } else if (kind === "OrderFulfilled") {
     const priceCents = Number(fields.price);
@@ -151,7 +151,7 @@ function applyEvent(state: StoreState, event: EventLike): void {
       kind: "fulfilled",
       orderId,
       digest: event.transactionDigest,
-      summary: `Order ${shortId(orderId)} executed at $${(priceCents / 100).toFixed(2)}/unit`,
+      summary: `Order ${shortId(orderId)} executed at RM${(priceCents / 100).toFixed(2)}/unit`,
     });
   } else if (kind === "OrderCancelled") {
     const existing = state.orders.get(orderId);
