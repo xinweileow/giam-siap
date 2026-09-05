@@ -40,6 +40,21 @@ below.
   with a dev keypair, skipping the owner's real approval — only use it if asked to, and always
   disclose that it bypasses real approval.
 
+## Market-search needs assessment (bare procurement intents)
+
+If asked to procure an item with no clear price/quantity given (e.g. "I want to
+procure coffee beans"), don't just ask for numbers — run the same
+needs-assessment flow documented in full in
+`agent/hermes.config/system-prompt.md`'s "Market-search needs assessment"
+section (this is the canonical copy; keep this pointer in sync if that
+section moves): ask short follow-ups about location/operating days/volume
+tied to the item/current stock, estimate `quantity` yourself from the
+answers (showing the math and a business-model reason), research the real
+current market price yourself via web search (never ask the owner to look
+it up, and explain why the market's at that level if you find a reason),
+then confirm the derived `{itemId, targetPriceCents, quantity}` with the
+owner before calling `createOrder`.
+
 ## Verification commands
 
 ```bash
