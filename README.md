@@ -1,6 +1,6 @@
 # Giam Siap
 
-**Giam Siap** ("save/economize" in Hokkien) is an agentic B2B procurement escrow engine built on Sui. A restaurant or cafe owner tells a Telegram bot to lock funds for a purchase at a target price; an autonomous AI agent watches the vendor's price in the background and settles the trade on-chain the instant the price condition is met — no human re-approval, no invoice, no counterparty risk.
+**Giam Siap** is an agentic B2B purchasing escrow engine built on Sui. A restaurant or cafe owner tells a Telegram bot to lock funds for a purchase at a target price; an autonomous AI agent watches the vendor's price in the background and settles the trade on-chain the instant the price condition is met — no human re-approval, no invoice, no counterparty risk.
 
 ## Problem Statement
 
@@ -37,7 +37,7 @@ Telegram (owner) ──▶ Hermes AI agent (intent parsing only)
                   sui-tools MCP server ──▶ Sui testnet contract
                           ▲                  (escrow, verification, payout)
                           │
-              deterministic watcher (no LLM, timer-driven)
+              deterministic watcher 
                           │
                           ▼
                   vendor price feed (signed quotes)
@@ -110,7 +110,8 @@ Message the bot in Telegram (e.g. *"Procure 50kg coffee beans, target RM10/kg"*)
 
 ## Team Members
 
-<!-- TODO: add team member names here -->
--
--
--
+```bash
+- Leow Wei Xin
+- Thong Poh Yoke
+- Chan Jin Xuan
+- Richie Wong Yu Zhi
