@@ -1,6 +1,6 @@
 # Giam Siap
 
-**Giam Siap** is an agentic B2B purchasing escrow engine built on Sui. A restaurant or cafe owner tells a Telegram bot to lock funds for a purchase at a target price; an autonomous AI agent watches the vendor's price in the background and settles the trade on-chain the instant the price condition is met — no human re-approval, no invoice, no counterparty risk.
+**Giam Siap** is an agentic B2B purchasing escrow engine built on Sui. An SME restaurant or cafe owner states a need in plain language to a Telegram bot — no wallet app, no crypto knowledge required — and an AI agent researches a fair market price, sizes the order, and locks the funds into a Move-contract escrow at that target price. From there, the AI steps back: a deterministic on-chain watcher verifies the vendor's own cryptographically signed price quote and settles the trade automatically the instant it meets the target — no re-approval, no invoice, no counterparty risk.
 
 ## Problem Statement
 
@@ -20,6 +20,16 @@ The owner doesn't need to arrive with a price and quantity already worked out �
 - **On-chain ed25519 signature verification** — a vendor's price quote must be cryptographically signed; the contract verifies the signature itself before ever releasing funds, so settlement never depends on trusting the agent's word.
 - **zkLogin via [Enoki](https://portal.enoki.mystenlabs.com)** — real, non-custodial login with a Google account. No seed phrase, no wallet extension; the owner's Sui address is derived directly from their OAuth identity.
 - **Enoki gas-station sponsorship** — the owner only ever authorizes their own spend; network gas is sponsored, so they never need to hold or manage a separate gas token.
+
+## AI x Sui Track Fit
+
+**Ideas:** transaction-executing assistant, workflow automation, agent-to-agent commerce.
+
+- **AI solves a real problem** — an SME owner has no procurement team, so pricing and quantity decisions fall on whoever is already running the floor: they either don't have time to check vendor prices and overpay, or guess at order size without ever properly sizing demand. Hermes' market-search step takes that job over — it asks about the business (location, operating days, volume, stock on hand), researches the real current vendor price itself, and comes back with a sized, priced order proposal instead of leaving the owner to work both numbers out alone. The benefit isn't just saved time: it's an owner who now orders at a fair, researched price and a quantity that actually matches their business, without needing to hire the staff a bigger chain would for exactly this.
+- **Why Sui specifically** — the product needs a currency escrow that no one, not even the agent or the team running it, can quietly override once it's locked, and Move's object model gives that for free: the escrowed coin is a resource with one owner and one exit path (`execute_order`'s signature check or a cancel), so there's no shared mutable state for a bug or a rogue call to corrupt mid-flight. zkLogin and sponsored transactions being native Sui/Enoki primitives, not a third-party wallet SDK bolted on top, is what makes it possible to onboard an owner with just a Google login and no gas token in the first place. And PTBs let the whole "source payment coin → lock into escrow" step happen as one atomic transaction, so there's never a half-finished order sitting in limbo.
+- **Thoughtful UX** — the interface is Telegram, not a wallet dApp, because that's where the target user already is. SME restaurant and cafe owners aren't crypto-native and won't install a wallet extension or manage a seed phrase just to buy ingredients — they already run their business through a phone and a chat app. So the entire blockchain layer is hidden behind a conversation: sign in with Google (zkLogin), never touch gas (Enoki sponsorship), and start from a bare need like *"I want to procure coffee beans"* instead of a form full of on-chain parameters. The owner experiences "texting a bot," not "using a blockchain."
+
+**Sui features used:** zkLogin (via Enoki) for non-custodial login · sponsored transactions (Enoki gas station) so owners never hold gas · Programmable Transaction Blocks composing coin-sourcing and the `create_order` Move call in one atomic transaction · on-chain ed25519 signature verification gating payout.
 
 ## Smart Contract Addresses (Testnet)
 
